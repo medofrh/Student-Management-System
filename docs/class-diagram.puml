@@ -1,0 +1,229 @@
+@startuml StudentManagementSystem
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "domain" {
+  enum Role {
+    STUDENT
+    TEACHER
+    ADMIN
+  }
+  class User {
+    - username : String
+    - password : String
+  }
+  class Admin {
+  }
+  User <|-- Admin
+
+  class Student {
+    - name : String
+    - id : String
+    - studentClass : String
+    - enrolledCourses : List<String>
+  }
+
+  class Teacher {
+    - name : String
+    - subjectSpecialization : String
+    - assignedCourses : List<String>
+  }
+
+  class Course {
+    - courseName : String
+    - uniqueCode : String
+    - assignedTeacher : Teacher
+  }
+
+  class Grade {
+    - score : double
+    - examType : String
+    - examDate : Date
+    --
+    - student : Student
+    - course : Course
+  }
+
+  class Classroom {
+    - uniqueNumber : String
+    - students : List<Student>
+    - supervisingTeacher : Teacher
+  }
+
+  class Department {
+    - name : String
+    - teachers : List<Teacher>
+    - students : List<Student>
+  }
+
+  class Schedule {
+    - timetable : Map<Date, Course>
+    - classroom : Classroom
+    - teacher : Teacher
+  }
+
+  class Exam {
+    - examDate : Date
+    - examType : String
+    - relatedCourse : Course
+  }
+
+  class Attendance {
+    - date : Date
+    - attendanceRecord : Map<Student, Boolean>
+  }
+
+  class ReportCard {
+    - student : Student
+    - grades : List<Grade>
+    - attendance : Attendance
+  }
+
+  ' Associations (with multiplicities/labels where useful)
+  Course --> "1" Teacher : assignedTeacher
+  Grade --> "1" Student
+  Grade --> "1" Course
+  Classroom o-- "*" Student : students
+  Classroom --> "1" Teacher : supervisingTeacher
+  Department o-- "*" Teacher : teachers
+  Department o-- "*" Student : students
+  Schedule --> "*" Course : timetable
+  Schedule --> "1" Classroom
+  Schedule --> "1" Teacher
+  Exam --> "1" Course
+  Attendance --> "*" Student : attendanceRecord
+  ReportCard --> "1" Student
+  ReportCard --> "*" Grade : grades
+  ReportCard --> "1" Attendance
+}
+
+package "core" {
+  class DataStore {
+    + registerObserver(observer : observer.Observer) : void
+    + getStudent(studentId : String) : Student
+    + getTeacher(teacherId : String) : Teacher
+    + getAdmin(adminId : String) : Admin
+    + getCoursesForStudent(studentId : String) : List<Course>
+    + getCoursesForTeacher(teacherId : String) : List<Course>
+    + getGradesForStudent(studentId : String) : List<Grade>
+    + getAttendanceForStudent(studentId : String) : List<String>
+    + getScheduleForStudent(studentId : String) : List<String>
+    + getNotificationsForStudent(studentId : String) : List<String>
+    + getScheduleForTeacher(teacherId : String) : List<String>
+    + addGrade(studentId : String, grade : Grade) : void
+    + addAttendance(studentId : String, record : String) : void
+    + updateScheduleForCourse(courseCode : String, slot : String) : void
+    + addExam(courseCode : String, description : String) : void
+    + getExamsForCourse(courseCode : String) : List<String>
+    + addAccount(username : String, password : String, role : Role, referenceId : String) : boolean
+    + updatePassword(username : String, newPassword : String) : boolean
+    + deleteAccount(username : String) : boolean
+    + describeAccounts() : List<String>
+    + getAllCourses() : Collection<Course>
+    + addCourse(code : String, name : String, teacherId : String) : boolean
+    + deleteCourse(code : String) : boolean
+  }
+
+  class AuthService {
+    + authenticate(role : Role, username : String, password : String) : Optional<String>
+  }
+}
+
+package "observer" {
+  interface Observer {
+    + onEvent(event : String, details : String) : void
+  }
+
+  class ConsoleObserver {
+  }
+  Observer <|.. ConsoleObserver
+}
+
+package "portal" {
+  class StudentPortal {
+    + open(studentId : String) : void
+  }
+
+  class TeacherPortal {
+    + open(teacherId : String) : void
+  }
+
+  class AdminPortal {
+    + open(adminId : String) : void
+  }
+}
+
+package "cli" {
+  class MenuCLI {
+    + start() : void
+  }
+}
+
+package "observer" {
+  interface Notification {
+    + sendAlert(message : String) : void
+  }
+}
+
+package "service" {
+  class DatabaseManager {
+    + save(object : Object) : void
+    + retrieve(id : String, clazz : Class<?>) : Object
+    + retrieveAll(clazz : Class<?>) : List<Object>
+    + update(object : Object) : void
+  }
+
+  class SearchEngine {
+    + searchStudents(students : List<Student>, query : String) : List<Student>
+    + searchCourses(courses : List<Course>, query : String) : List<Course>
+    + searchGrades(grades : List<Grade>, studentId : String) : List<Grade>
+  }
+
+  class Logger {
+    + log(action : String, details : String) : void
+    + logLogin(username : String) : void
+    + logUpdate(entity : String, entityId : String) : void
+    + logDeletion(entity : String, entityId : String) : void
+  }
+
+  class CLI {
+    + start() : void
+  }
+
+  ' Usage dependencies
+  SearchEngine ..> Student
+  SearchEngine ..> Course
+  SearchEngine ..> Grade
+}
+
+core.AuthService --> core.DataStore
+core.AuthService ..> Role
+core.DataStore ..> Student
+core.DataStore ..> Teacher
+core.DataStore ..> Admin
+core.DataStore ..> Course
+core.DataStore ..> Grade
+core.DataStore ..> observer.Observer
+
+portal.StudentPortal --> core.DataStore
+portal.StudentPortal ..> Student
+portal.StudentPortal ..> Course
+portal.StudentPortal ..> Grade
+
+portal.TeacherPortal --> core.DataStore
+portal.TeacherPortal ..> Teacher
+portal.TeacherPortal ..> Student
+portal.TeacherPortal ..> Course
+portal.TeacherPortal ..> Grade
+
+portal.AdminPortal --> core.DataStore
+portal.AdminPortal ..> Course
+portal.AdminPortal ..> Role
+
+cli.MenuCLI --> core.AuthService
+cli.MenuCLI --> portal.StudentPortal
+cli.MenuCLI --> portal.TeacherPortal
+cli.MenuCLI --> portal.AdminPortal
+cli.MenuCLI ..> Role
+
+@enduml
