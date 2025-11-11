@@ -1,4 +1,4 @@
-package app.core;
+package core;
 
 import domain.Role;
 

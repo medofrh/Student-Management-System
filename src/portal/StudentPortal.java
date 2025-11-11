@@ -1,6 +1,6 @@
-package app.portal;
+package portal;
 
-import app.core.DataStore;
+import core.DataStore;
 import domain.Course;
 import domain.Grade;
 import domain.Student;

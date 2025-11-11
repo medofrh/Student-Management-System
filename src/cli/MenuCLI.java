@@ -1,10 +1,10 @@
-package app.cli;
+package cli;
 
-import app.core.AuthService;
-import app.core.DataStore;
-import app.portal.AdminPortal;
-import app.portal.StudentPortal;
-import app.portal.TeacherPortal;
+import core.AuthService;
+import core.DataStore;
+import portal.AdminPortal;
+import portal.StudentPortal;
+import portal.TeacherPortal;
 import domain.Role;
 
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package app.observer;
+package observer;
 
 public class ConsoleObserver implements Observer {
     @Override

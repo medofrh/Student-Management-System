@@ -1,7 +1,7 @@
-import app.cli.MenuCLI;
-import app.core.AuthService;
-import app.core.DataStore;
-import app.observer.ConsoleObserver;
+import cli.MenuCLI;
+import core.AuthService;
+import core.DataStore;
+import observer.ConsoleObserver;
 
 public class Main {
     public static void main(String[] args) {

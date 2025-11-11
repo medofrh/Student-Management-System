@@ -1,6 +1,6 @@
-package app.core;
+package core;
 
-import app.observer.Observer;
+import observer.Observer;
 import domain.Admin;
 import domain.Course;
 import domain.Grade;
