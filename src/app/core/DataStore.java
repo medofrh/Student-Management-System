@@ -1,5 +1,6 @@
 package app.core;
 
+import app.observer.Observer;
 import domain.Admin;
 import domain.Course;
 import domain.Grade;
@@ -26,6 +27,7 @@ public class DataStore {
     private final Map<String, List<String>> teacherSchedules = new HashMap<>();
     private final Map<String, List<String>> examsByCourse = new HashMap<>();
     private final Map<String, Account> accounts = new HashMap<>();
+    private final List<Observer> observers = new ArrayList<>();
 
     public DataStore() {
         seed();
@@ -81,6 +83,10 @@ public class DataStore {
 
     public Optional<Account> findAccount(String username) {
         return Optional.ofNullable(accounts.get(username));
+    }
+
+    public void registerObserver(Observer observer) {
+        observers.add(observer);
     }
 
     public Student getStudent(String studentId) {
@@ -148,11 +154,13 @@ public class DataStore {
     public void addGrade(String studentId, Grade grade) {
         gradesByStudent.computeIfAbsent(studentId, id -> new ArrayList<>()).add(grade);
         addNotification(studentId, "Neue Note fuer " + grade.getCourse().getUniqueCode() + " gespeichert");
+        notifyObservers("GRADE_ADDED", studentId + " / " + grade.getCourse().getUniqueCode());
     }
 
     public void addAttendance(String studentId, String record) {
         attendanceByStudent.computeIfAbsent(studentId, id -> new ArrayList<>()).add(record);
         addNotification(studentId, "Aktualisierte Anwesenheit: " + record);
+        notifyObservers("ATTENDANCE_RECORDED", studentId + " -> " + record);
     }
 
     public void updateScheduleForCourse(String courseCode, String slotDescription) {
@@ -171,6 +179,7 @@ public class DataStore {
                 schedule.add(slotDescription);
             }
         }
+        notifyObservers("SCHEDULE_UPDATED", courseCode + " -> " + slotDescription);
     }
 
     public void addExam(String courseCode, String description) {
@@ -180,6 +189,7 @@ public class DataStore {
                 addNotification(student.getId(), "Neue Pruefung fuer " + courseCode + ": " + description);
             }
         }
+        notifyObservers("EXAM_ADDED", courseCode + " :: " + description);
     }
 
     public List<String> getExamsForCourse(String courseCode) {
@@ -191,6 +201,7 @@ public class DataStore {
             return false;
         }
         registerAccount(username, password, role, referenceId);
+        notifyObservers("ACCOUNT_ADDED", username + " (" + role + ")");
         return true;
     }
 
@@ -200,11 +211,16 @@ public class DataStore {
             return false;
         }
         accounts.put(username, new Account(username, newPassword, account.role(), account.referenceId()));
+        notifyObservers("ACCOUNT_PASSWORD_UPDATED", username);
         return true;
     }
 
     public boolean deleteAccount(String username) {
-        return accounts.remove(username) != null;
+        boolean removed = accounts.remove(username) != null;
+        if (removed) {
+            notifyObservers("ACCOUNT_DELETED", username);
+        }
+        return removed;
     }
 
     public Collection<Course> getAllCourses() {
@@ -222,6 +238,7 @@ public class DataStore {
         Course course = new Course(name, code, teacher);
         courses.put(code, course);
         teacher.getAssignedCourses().add(code);
+        notifyObservers("COURSE_ADDED", code + " -> " + name);
         return true;
     }
 
@@ -237,6 +254,7 @@ public class DataStore {
             student.getEnrolledCourses().removeIf(courseCode -> courseCode.equalsIgnoreCase(code));
         }
         gradesByStudent.values().forEach(list -> list.removeIf(grade -> grade.getCourse().getUniqueCode().equalsIgnoreCase(code)));
+        notifyObservers("COURSE_DELETED", code);
         return true;
     }
 
@@ -253,5 +271,11 @@ public class DataStore {
     }
 
     public record Account(String username, String password, Role role, String referenceId) {
+    }
+
+    private void notifyObservers(String event, String details) {
+        for (Observer observer : observers) {
+            observer.onEvent(event, details);
+        }
     }
 }
