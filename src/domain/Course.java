@@ -3,9 +3,9 @@ package domain;
 public class Course {
     private String courseName;
     private String uniqueCode;
-    private String assignedTeacher;
+    private Teacher assignedTeacher;
 
-    public Course(String courseName, String uniqueCode, String assignedTeacher) {
+    public Course(String courseName, String uniqueCode, Teacher assignedTeacher) {
         this.courseName = courseName;
         this.uniqueCode = uniqueCode;
         this.assignedTeacher = assignedTeacher;
@@ -27,11 +27,11 @@ public class Course {
         this.uniqueCode = uniqueCode;
     }
 
-    public String getAssignedTeacher() {
+    public Teacher getAssignedTeacher() {
         return assignedTeacher;
     }
 
-    public void setAssignedTeacher(String assignedTeacher) {
+    public void setAssignedTeacher(Teacher assignedTeacher) {
         this.assignedTeacher = assignedTeacher;
     }
 }
